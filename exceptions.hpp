@@ -10,34 +10,76 @@
  * Just remember to throw exception when needed.
  */
 namespace sjtu {
+    class exception {
+    protected:
+        const std::string variant;
+        std::string detail;
 
-class exception {
-protected:
-    const std::string variant = "";
-    std::string detail = "";
-public:
-    exception() {}
-    exception(const exception &ec) : variant(ec.variant), detail(ec.detail) {}
-    virtual std::string what() {
-        return variant + " " + detail;
-    }
-};
+    public:
+        exception() = default;
 
-class index_out_of_bound : public exception {
-    /* __________________________ */
-};
+        exception(const exception &ec) = default;
 
-class runtime_error : public exception {
-    /* __________________________ */
-};
+        virtual std::string what() {
+            return variant + " " + detail;
+        }
 
-class invalid_iterator : public exception {
-    /* __________________________ */
-};
+        virtual ~exception() = default;
+    };
 
-class container_is_empty : public exception {
-    /* __________________________ */
-};
+    class index_out_of_bound : public exception {
+        const std::string msg;
+
+    public:
+        index_out_of_bound(std::string message) : msg(std::move(message)) {
+        }
+
+        std::string what() override {
+            return msg;
+        } /* __________________________ */
+    };
+
+    class runtime_error : public exception {
+        const std::string msg;
+
+    public:
+        runtime_error(std::string message) : msg(std::move(message)) {
+        }
+
+        std::string what() override {
+            return msg;
+        }
+
+        /* __________________________ */
+    };
+
+    class invalid_iterator : public exception {
+        const std::string msg;
+
+    public:
+        invalid_iterator(std::string message) : msg(std::move(message)) {
+        }
+
+        std::string what() override {
+            return msg;
+        }
+
+        /* __________________________ */
+    };
+
+    class container_is_empty : public exception {
+        const std::string msg;
+
+    public:
+        container_is_empty(std::string message) : msg(std::move(message)) {
+        }
+
+        std::string what() override {
+            return msg;
+        }
+
+        /* __________________________ */
+    };
 }
 
 #endif
