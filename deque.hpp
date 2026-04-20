@@ -5,7 +5,6 @@
 
 #include <cstddef>
 #include <algorithm>
-#include <stdexcept>
 
 namespace sjtu {
     template<class T>
@@ -96,24 +95,24 @@ namespace sjtu {
              */
             iterator operator++(int) {
                 iterator tmp = *this;
-                if (is_end_atom(it)) throw std::invalid_argument("it++");
+                if (is_end_atom(it)) throw invalid_iterator();
                 if (it != nullptr) {
                     it = it->next;
                     return tmp;
                 }
-                throw std::invalid_argument("it++");
+                throw invalid_iterator();
             }
 
             /**
              * ++iter
              */
             iterator &operator++() {
-                if (is_end_atom(it)) throw std::invalid_argument("++it");
+                if (is_end_atom(it)) throw invalid_iterator();
                 if (it != nullptr) {
                     it = it->next;
                     return *this;
                 }
-                throw std::invalid_argument("++it");
+                throw invalid_iterator();
             }
 
             /**
@@ -121,24 +120,24 @@ namespace sjtu {
              */
             iterator operator--(int) {
                 iterator tmp = *this;
-                if (it != nullptr && it->pre == nullptr) throw std::invalid_argument("it--");
+                if (it != nullptr && it->pre == nullptr) throw invalid_iterator();
                 if (it != nullptr) {
                     it = it->pre;
                     return tmp;
                 }
-                throw std::invalid_argument("it--");
+                throw invalid_iterator();
             }
 
             /**
              * --iter
              */
             iterator &operator--() {
-                if (it != nullptr && it->pre == nullptr) throw std::invalid_argument("--it");
+                if (it != nullptr && it->pre == nullptr) throw invalid_iterator();
                 if (it != nullptr) {
                     it = it->pre;
                     return *this;
                 }
-                throw std::invalid_argument("--it");
+                throw invalid_iterator();
             }
 
             /**
@@ -147,7 +146,7 @@ namespace sjtu {
              */
             T &operator*() const {
                 if (it != nullptr && !is_end_atom(it)) return *(it->data);
-                throw std::invalid_argument("*it");
+                throw invalid_iterator();
             }
 
             /**
@@ -155,7 +154,7 @@ namespace sjtu {
              */
             T *operator->() const {
                 if (it != nullptr && !is_end_atom(it)) return it->data;
-                throw std::invalid_argument("->it");
+                throw invalid_iterator();
             }
 
             bool operator==(const iterator &rhs) const {
@@ -199,50 +198,50 @@ namespace sjtu {
 
             const_iterator operator++(int) {
                 const_iterator tmp = *this;
-                if (is_end_atom(it)) throw std::invalid_argument("it++");
+                if (is_end_atom(it)) throw invalid_iterator();
                 if (it != nullptr) {
                     it = it->next;
                     return tmp;
                 }
-                throw std::invalid_argument("it++");
+                throw invalid_iterator();
             }
 
             const_iterator &operator++() {
-                if (is_end_atom(it)) throw std::invalid_argument("++it");
+                if (is_end_atom(it)) throw invalid_iterator();
                 if (it != nullptr) {
                     it = it->next;
                     return *this;
                 }
-                throw std::invalid_argument("++it");
+                throw invalid_iterator();
             }
 
             const_iterator operator--(int) {
                 const_iterator tmp = *this;
-                if (it != nullptr && it->pre == nullptr) throw std::invalid_argument("it--");
+                if (it != nullptr && it->pre == nullptr) throw invalid_iterator();
                 if (it != nullptr) {
                     it = it->pre;
                     return tmp;
                 }
-                throw std::invalid_argument("it--");
+                throw invalid_iterator();
             }
 
             const_iterator &operator--() {
-                if (it != nullptr && it->pre == nullptr) throw std::invalid_argument("--it");
+                if (it != nullptr && it->pre == nullptr) throw invalid_iterator();
                 if (it != nullptr) {
                     it = it->pre;
                     return *this;
                 }
-                throw std::invalid_argument("--it");
+                throw invalid_iterator();
             }
 
             const T &operator*() const {
                 if (it != nullptr && !is_end_atom(it)) return *(it->data);
-                throw std::invalid_argument("*cit");
+                throw invalid_iterator();
             }
 
             const T *operator->() const {
                 if (it != nullptr && !is_end_atom(it)) return it->data;
-                throw std::invalid_argument("->cit");
+                throw invalid_iterator();
             }
 
             bool operator==(const const_iterator &rhs) const {
@@ -330,7 +329,7 @@ namespace sjtu {
         }
 
         iterator insert(iterator pos, const T &val) {
-            if (!validity_check(pos))throw std::invalid_argument("insert_double_list");
+            if (!validity_check(pos))throw invalid_iterator();
             if (is_end_atom(pos.it)) {
                 insert_tail(val);
                 iterator ret = end();
@@ -770,7 +769,7 @@ namespace sjtu {
              * invaild_iterator.
              */
             int operator-(const iterator &rhs) const {
-                if (rhs.contain_it != contain_it)throw std::invalid_argument("iterator-iterator");
+                if (rhs.contain_it != contain_it)throw invalid_iterator();
                 if (mp_it == rhs.mp_it) {
                     return (bl_it - rhs.bl_it);
                 }
@@ -856,10 +855,10 @@ namespace sjtu {
              * ++iter
              */
             iterator &operator++() {
-                if (contain_it == nullptr) throw invalid_iterator("++iterator");
+                if (contain_it == nullptr) throw invalid_iterator();
                 auto last = contain_it->end();
                 --last;
-                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator("++iterator");
+                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator();
                 ++bl_it;
                 if (bl_it == (*mp_it).end()) {
                     BlockT_list_iterator next_mp = mp_it;
@@ -885,8 +884,8 @@ namespace sjtu {
              * --iter
              */
             iterator &operator--() {
-                if (contain_it == nullptr) throw invalid_iterator("--iterator");
-                if (mp_it == contain_it->begin() && bl_it == (*mp_it).begin()) throw invalid_iterator("--iterator");
+                if (contain_it == nullptr) throw invalid_iterator();
+                if (mp_it == contain_it->begin() && bl_it == (*mp_it).begin()) throw invalid_iterator();
                 if (bl_it == (*mp_it).begin()) {
                     --mp_it;
                     bl_it = (*mp_it).end();
@@ -899,10 +898,10 @@ namespace sjtu {
              * *it
              */
             T &operator*() const {
-                if (contain_it == nullptr) throw invalid_iterator("*iterator");
+                if (contain_it == nullptr) throw invalid_iterator();
                 auto last = contain_it->end();
                 --last;
-                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator("*iterator");
+                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator();
                 return *bl_it;
             }
 
@@ -910,10 +909,10 @@ namespace sjtu {
              * it->field
              */
             T *operator->() const {
-                if (contain_it == nullptr) throw invalid_iterator("->iterator");
+                if (contain_it == nullptr) throw invalid_iterator();
                 auto last = contain_it->end();
                 --last;
-                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator("->iterator");
+                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator();
                 return bl_it.operator->();
             }
 
@@ -997,7 +996,7 @@ namespace sjtu {
              * invaild_iterator.
              */
             int operator-(const const_iterator &rhs) const {
-                if (rhs.contain_it != contain_it)throw std::invalid_argument("const_iterator-const_iterator");
+                if (rhs.contain_it != contain_it)throw invalid_iterator();
                 if (mp_it == rhs.mp_it) {
                     return (bl_it - rhs.bl_it);
                 }
@@ -1083,10 +1082,10 @@ namespace sjtu {
              * ++iter
              */
             const_iterator &operator++() {
-                if (contain_it == nullptr) throw invalid_iterator("++const_iterator");
+                if (contain_it == nullptr) throw invalid_iterator();
                 auto last = contain_it->end();
                 --last;
-                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator("++const_iterator");
+                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator();
                 ++bl_it;
                 if (bl_it == (*mp_it).end()) {
                     BlockT_list_iterator next_mp = mp_it;
@@ -1112,8 +1111,8 @@ namespace sjtu {
              * --iter
              */
             const_iterator &operator--() {
-                if (contain_it == nullptr) throw invalid_iterator("--const_iterator");
-                if (mp_it == contain_it->begin() && bl_it == (*mp_it).begin()) throw invalid_iterator("--const_iterator");
+                if (contain_it == nullptr) throw invalid_iterator();
+                if (mp_it == contain_it->begin() && bl_it == (*mp_it).begin()) throw invalid_iterator();
                 if (bl_it == (*mp_it).begin()) {
                     --mp_it;
                     bl_it = (*mp_it).end();
@@ -1126,10 +1125,10 @@ namespace sjtu {
              * *it
              */
             T &operator*() const {
-                if (contain_it == nullptr) throw invalid_iterator("*const_iterator");
+                if (contain_it == nullptr) throw invalid_iterator();
                 auto last = contain_it->end();
                 --last;
-                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator("*const_iterator");
+                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator();
                 return *bl_it;
             }
 
@@ -1137,10 +1136,10 @@ namespace sjtu {
              * it->field
              */
             T *operator->() const {
-                if (contain_it == nullptr) throw invalid_iterator("->const_iterator");
+                if (contain_it == nullptr) throw invalid_iterator();
                 auto last = contain_it->end();
                 --last;
-                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator("->const_iterator");
+                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator();
                 return bl_it.operator->();
             }
 
@@ -1211,7 +1210,7 @@ namespace sjtu {
          */
         T &at(const size_t &pos) {
             size_t cnt = 0;
-            if (pos >= length)throw index_out_of_bound("deque::at");
+            if (pos >= length)throw index_out_of_bound();
             BlockT_list_iterator i = _blocks.begin();
             while (i != _blocks.end() && cnt + i->size() <= pos) {
                 cnt += i->size();
@@ -1222,7 +1221,7 @@ namespace sjtu {
 
         const T &at(const size_t &pos) const {
             size_t cnt = 0;
-            if (pos >= length)throw index_out_of_bound("deque::at");
+            if (pos >= length)throw index_out_of_bound();
             BlockT_list_citerator i = _blocks.begin();
             while (i != _blocks.end() && cnt + i->size() <= pos) {
                 cnt += i->size();
@@ -1240,7 +1239,7 @@ namespace sjtu {
          * throw container_is_empty when the container is empty.
          */
         const T &front() const {
-            if (empty())throw container_is_empty("front");
+            if (empty())throw container_is_empty();
             return _blocks.begin()->front();
         }
 
@@ -1249,7 +1248,7 @@ namespace sjtu {
          * throw container_is_empty when the container is empty.
          */
         const T &back() const {
-            if (empty()) throw container_is_empty("back");
+            if (empty()) throw container_is_empty();
             auto it = _blocks.end();
             --it;
             return it->back();
@@ -1329,7 +1328,7 @@ namespace sjtu {
          * throw if the iterator is invalid or it points to a wrong place.
          */
         iterator insert(iterator pos, const T &value) {
-            if (pos.contain_it != &_blocks) throw invalid_iterator("insert");
+            if (pos.contain_it != &_blocks) throw invalid_iterator();
             add(pos);
             if (!pos.mp_it->full()) {
                 int p = block<T>::position(pos.bl_it);
@@ -1363,11 +1362,11 @@ namespace sjtu {
          * the iterator is invalid, or it points to a wrong place.
          */
         iterator erase(iterator pos) {
-            if (pos.contain_it != &_blocks) throw invalid_iterator("erase");
-            if (empty()) throw container_is_empty("erase");
-            if (pos.mp_it == _blocks.end()) throw invalid_iterator("erase");
+            if (pos.contain_it != &_blocks) throw invalid_iterator();
+            if (empty()) throw container_is_empty();
+            if (pos.mp_it == _blocks.end()) throw invalid_iterator();
             int p = block<T>::position(pos.bl_it);
-            if (p < 0 || p >= static_cast<int>(pos.mp_it->size())) throw invalid_iterator("erase");
+            if (p < 0 || p >= static_cast<int>(pos.mp_it->size())) throw invalid_iterator();
             pos.bl_it = pos.mp_it->erase(p);
             minor(pos);
             if (length == 0) {
@@ -1416,7 +1415,7 @@ namespace sjtu {
          * throw when the container is empty.
          */
         void pop_back() {
-            if (empty()) throw container_is_empty("pop_back");
+            if (empty()) throw container_is_empty();
             auto pos_mp = _blocks.end();
             --pos_mp;
             pos_mp->pop_back();
@@ -1447,7 +1446,7 @@ namespace sjtu {
          * throw when the container is empty.
          */
         void pop_front() {
-            if (empty()) throw container_is_empty("pop_front");
+            if (empty()) throw container_is_empty();
             auto pos_mp = _blocks.begin();
             pos_mp->pop_front();
             minor();
