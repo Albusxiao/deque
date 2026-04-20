@@ -4,6 +4,8 @@
 #include "exceptions.hpp"
 
 #include <cstddef>
+#include <algorithm>
+#include <stdexcept>
 
 namespace sjtu {
     template<class T>
@@ -94,24 +96,24 @@ namespace sjtu {
              */
             iterator operator++(int) {
                 iterator tmp = *this;
-                if (is_end_atom(it)) throw sjtu::invalid_iterator("it++");
+                if (is_end_atom(it)) throw std::invalid_argument("it++");
                 if (it != nullptr) {
                     it = it->next;
                     return tmp;
                 }
-                throw sjtu::invalid_iterator("it++");
+                throw std::invalid_argument("it++");
             }
 
             /**
              * ++iter
              */
             iterator &operator++() {
-                if (is_end_atom(it)) throw sjtu::invalid_iterator("++it");
+                if (is_end_atom(it)) throw std::invalid_argument("++it");
                 if (it != nullptr) {
                     it = it->next;
                     return *this;
                 }
-                throw sjtu::invalid_iterator("++it");
+                throw std::invalid_argument("++it");
             }
 
             /**
@@ -119,24 +121,24 @@ namespace sjtu {
              */
             iterator operator--(int) {
                 iterator tmp = *this;
-                if (it != nullptr && it->pre == nullptr) throw sjtu::invalid_iterator("it--");
+                if (it != nullptr && it->pre == nullptr) throw std::invalid_argument("it--");
                 if (it != nullptr) {
                     it = it->pre;
                     return tmp;
                 }
-                throw sjtu::invalid_iterator("it--");
+                throw std::invalid_argument("it--");
             }
 
             /**
              * --iter
              */
             iterator &operator--() {
-                if (it != nullptr && it->pre == nullptr) throw sjtu::invalid_iterator("--it");
+                if (it != nullptr && it->pre == nullptr) throw std::invalid_argument("--it");
                 if (it != nullptr) {
                     it = it->pre;
                     return *this;
                 }
-                throw sjtu::invalid_iterator("--it");
+                throw std::invalid_argument("--it");
             }
 
             /**
@@ -145,7 +147,7 @@ namespace sjtu {
              */
             T &operator*() const {
                 if (it != nullptr && !is_end_atom(it)) return *(it->data);
-                throw sjtu::invalid_iterator("*it");
+                throw std::invalid_argument("*it");
             }
 
             /**
@@ -153,7 +155,7 @@ namespace sjtu {
              */
             T *operator->() const {
                 if (it != nullptr && !is_end_atom(it)) return it->data;
-                throw sjtu::invalid_iterator("->it");
+                throw std::invalid_argument("->it");
             }
 
             bool operator==(const iterator &rhs) const {
@@ -166,10 +168,12 @@ namespace sjtu {
 
             bool operator==(const const_iterator &rhs) const { return it == rhs.it; }
             bool operator!=(const const_iterator &rhs) const { return it != rhs.it; }
-            [[nodiscard]]bool validity_check() const {
-                return double_list<T>::validity_check(it);
+
+            [[nodiscard]] bool validity_check() const {
+                return double_list<T>::validity_check(const_iterator(it, contain_it));
             }
-            operator const_iterator() const{
+
+            operator const_iterator() const {
                 return const_iterator(*this);
             }
         };
@@ -195,50 +199,50 @@ namespace sjtu {
 
             const_iterator operator++(int) {
                 const_iterator tmp = *this;
-                if (is_end_atom(it)) throw sjtu::invalid_iterator("it++");
+                if (is_end_atom(it)) throw std::invalid_argument("it++");
                 if (it != nullptr) {
                     it = it->next;
                     return tmp;
                 }
-                throw sjtu::invalid_iterator("it++");
+                throw std::invalid_argument("it++");
             }
 
             const_iterator &operator++() {
-                if (is_end_atom(it)) throw sjtu::invalid_iterator("++it");
+                if (is_end_atom(it)) throw std::invalid_argument("++it");
                 if (it != nullptr) {
                     it = it->next;
                     return *this;
                 }
-                throw sjtu::invalid_iterator("++it");
+                throw std::invalid_argument("++it");
             }
 
             const_iterator operator--(int) {
                 const_iterator tmp = *this;
-                if (it != nullptr && it->pre == nullptr) throw sjtu::invalid_iterator("it--");
+                if (it != nullptr && it->pre == nullptr) throw std::invalid_argument("it--");
                 if (it != nullptr) {
                     it = it->pre;
                     return tmp;
                 }
-                throw sjtu::invalid_iterator("it--");
+                throw std::invalid_argument("it--");
             }
 
             const_iterator &operator--() {
-                if (it != nullptr && it->pre == nullptr) throw sjtu::invalid_iterator("--it");
+                if (it != nullptr && it->pre == nullptr) throw std::invalid_argument("--it");
                 if (it != nullptr) {
                     it = it->pre;
                     return *this;
                 }
-                throw sjtu::invalid_iterator("--it");
+                throw std::invalid_argument("--it");
             }
 
             const T &operator*() const {
                 if (it != nullptr && !is_end_atom(it)) return *(it->data);
-                throw sjtu::invalid_iterator("*cit");
+                throw std::invalid_argument("*cit");
             }
 
             const T *operator->() const {
                 if (it != nullptr && !is_end_atom(it)) return it->data;
-                throw sjtu::invalid_iterator("->cit");
+                throw std::invalid_argument("->cit");
             }
 
             bool operator==(const const_iterator &rhs) const {
@@ -251,8 +255,9 @@ namespace sjtu {
 
             bool operator==(const iterator &rhs) const { return it == rhs.it; }
             bool operator!=(const iterator &rhs) const { return it != rhs.it; }
-            [[nodiscard]]bool validity_check() const {
-                return double_list<T>::validity_check(it);
+
+            [[nodiscard]] bool validity_check() const {
+                return double_list<T>::validity_check(*this);
             }
         };
 
@@ -260,7 +265,8 @@ namespace sjtu {
          * return an iterator to the beginning
          */
         iterator begin() {
-            return iterator(begin_atom);
+            if (empty()) return end();
+            return iterator(begin_atom, this);
         }
 
         /**
@@ -269,15 +275,15 @@ namespace sjtu {
          * just after the last element.
          */
         iterator end() {
-            return iterator(end_atom);
+            return iterator(end_atom, this);
         }
 
         const_iterator begin() const {
-            return const_iterator(begin_atom);
+            return const_iterator(begin_atom, const_cast<double_list<T> *>(this));
         }
 
         const_iterator end() const {
-            return const_iterator(end_atom);
+            return const_iterator(end_atom, const_cast<double_list<T> *>(this));
         }
 
         /**
@@ -300,7 +306,7 @@ namespace sjtu {
             delete pos.it->data;
             delete pos.it;
             --size;
-            if (!is_end_atom(tmp)) return iterator(tmp);
+            if (!is_end_atom(tmp)) return iterator(tmp, this);
             else return end();
         }
 
@@ -323,12 +329,31 @@ namespace sjtu {
             ++size;
         }
 
+        iterator insert(iterator pos, const T &val) {
+            if (!validity_check(pos))throw std::invalid_argument("insert_double_list");
+            if (is_end_atom(pos.it)) {
+                insert_tail(val);
+                iterator ret = end();
+                --ret;
+                return ret;
+            }
+            if (pos.it->pre == nullptr) {
+                insert_head(val);
+                return begin();
+            }
+            atom *t = new atom(pos.it->pre, pos.it, new T(val));
+            pos.it->pre->next = t;
+            pos.it->pre = t;
+            ++size;
+            return iterator(t, this);
+        }
+
         void delete_head() {
-            erase(iterator(begin_atom));
+            erase(iterator(begin_atom, this));
         }
 
         void delete_tail() {
-            erase(iterator(end_atom->pre));
+            erase(iterator(end_atom->pre, this));
         }
 
         /**
@@ -347,11 +372,24 @@ namespace sjtu {
             while (size != 0)delete_head();
         }
 
-        [[nodiscard]] static  bool validity_check(const const_iterator &it) const {
+        void swap(double_list &other) {
+            atom *tb = begin_atom;
+            begin_atom = other.begin_atom;
+            other.begin_atom = tb;
+            atom *te = end_atom;
+            end_atom = other.end_atom;
+            other.end_atom = te;
+            size_t ts = size;
+            size = other.size;
+            other.size = ts;
+        }
+
+        [[nodiscard]] static bool validity_check(const const_iterator &it) {
             if (it.contain_it == nullptr)return false;
             iterator tmp = it.contain_it->begin();
-            while (tmp != it.contain_it->end()) {
+            while (true) {
                 if (tmp == it)return true;
+                if (tmp == it.contain_it->end()) break;
                 ++tmp;
             }
             return false;
@@ -359,304 +397,195 @@ namespace sjtu {
     };
 
 
+
+    template<class T>
+    class deque;
     template<class T>
     class block {
-        size_t block_size, block_volume;
-        T *_rear, _front, _base;
-        /**
-         *check whether the iterator is valid
-         */
-
+    private:
+        friend class deque<T>;
+        T **_data;
+        int _head,_tail,_count,_capacity;
+        int _idx(int i) const {
+            return (i + _capacity) % _capacity;
+        }
 
     public:
-        static bool validity_check(const T *_data, const block *_block) {
-            if (!(_data >= _block->_base && _data < (_block->_base + _block->block_volume)))return false;
-            if (_block->_front <= _block->_rear) {
-                if (_data <= _block->_rear && _data >= _block->_front)return true;
-                return false;
-            } else {
-                if (_data <= _block->_rear || _data >= _block->_front)return true;
-                return false;
-            }
-        }
-
-        class const_iterator;
-
         class iterator {
+            friend class block;
+        private:
+            block *_ptr;
+            int _pos;
+
         public:
-            T *_data;
-            block *_block;
-
-            [[nodiscard]] bool validity_check() const {
-                return block::validity_check(_data, _block);
+            iterator(block *p = nullptr, int pos = 0) : _ptr(p), _pos(pos) {}
+            T& operator*() const {
+                return *(_ptr->_data[_ptr->_idx(_ptr->_head + _pos)]);
             }
 
-            iterator() : _data(nullptr), _block(nullptr) {
+            T* operator->() const {
+                return _ptr->_data[_ptr->_idx(_ptr->_head + _pos)];
             }
 
-            iterator(T *dat, block *blo) : _data(dat), _block(blo) {
-            }
-
-            iterator(const iterator &other) : _data(other._data), _block(other._block) {
-            };
-
-            ~iterator() = default;
-
-            iterator &operator++() {
-                if (!validity_check())throw sjtu::invalid_iterator("operator++");
-                _data = _block->_base + (_data - _block->_base + 1 + _block->block_volume) % _block->block_volume;
+            iterator& operator++() {
+                _pos++;
                 return *this;
             }
 
-            iterator &operator+(const int &n) {
-                if (!validity_check())throw sjtu::invalid_iterator("operator+n");
-                _data = _block->_base + (_data - _block->_base + n + _block->block_volume) % _block->block_volume;
+            iterator operator++(int) {
+                iterator temp = *this;
+                _pos++;
+                return temp;
+            }
+
+            iterator& operator--() {
+                _pos--;
                 return *this;
             }
-
-            iterator &operator--() {
-                if (!validity_check())throw sjtu::invalid_iterator("operator--");
-                if (_data == _block->_front)return _block->begin();
-                _data = _block->_base + (_data - _block->_base - 1 + _block->block_volume) % _block->block_volume;
-                return *this;
+            iterator operator--(int) {
+                iterator temp = *this;
+                _pos--;
+                return temp;
+            }
+            bool operator==(const iterator &rhs) const {
+                return _ptr == rhs._ptr && _pos == rhs._pos;
             }
 
-            iterator &operator-(const int &n) {
-                if (!validity_check())throw sjtu::invalid_iterator("operator-n");
-                _data = _block->_base + (_data - _block->_base - n + _block->block_volume) % _block->block_volume;
-                return *this;
-            }
-
-            iterator &operator=(const iterator &other) {
-                if (&other == this)return *this;
-                _data = other._data;
-                _block = other._block;
-                return *this;
-            }
-
-            /**
-             * compare functions
-             */
-            [[nodiscard]] bool operator==(const iterator &rhs) {
-                return _data == rhs._data && _block == rhs._block;
-            }
-
-            [[nodiscard]] bool operator!=(const iterator &rhs) {
+            bool operator!=(const iterator &rhs) const {
                 return !(*this == rhs);
             }
-
-            [[nodiscard]] bool operator==(const_iterator &rhs) {
-                return _data == rhs._data && _block == rhs._block;
-            }
-
-            [[nodiscard]] bool operator!=(const_iterator &rhs) {
-                return !(*this == rhs);
-            }
-
-
-            T *operator->() const {
-                if (!validity_check())throw sjtu::invalid_iterator("operator->");
-                return _data;
-            }
-
-            T &operator*() const {
-                if (!validity_check())throw sjtu::invalid_iterator("operator->");
-                return *_data;
-            }
-            operator const_iterator() const{
-                return const_iterator(*this);
-            }
+            iterator operator+(int n) const { return iterator(_ptr, _pos + n); }
+            iterator operator-(int n) const { return iterator(_ptr, _pos - n); }
+            int operator-(const iterator &rhs) const { return _pos - rhs._pos; }
         };
 
-        class const_iterator {
-        public:
-            T *_data;
-            block *_block;
-
-            [[nodiscard]] bool validity_check() const {
-                return block::validity_check(_data, _block);
-            }
-
-            const_iterator() : _data(nullptr), _block(nullptr) {
-            }
-
-            const_iterator(T *dat, block *blo) : _data(dat), _block(blo) {
-            }
-
-            const_iterator(const iterator &other) : _data(other._data), _block(other._block) {
-            };
-
-            const_iterator(const_iterator &other) : _data(other._data), _block(other._block) {
-            };
-
-            ~const_iterator() = default;
-
-            const_iterator &operator++() {
-                if (!validity_check(_data, _block))throw sjtu::invalid_iterator("operator++");
-                _data = _block->_base + (_data - _block->_base + 1 + _block->block_volume) % _block->block_volume;
-                return *this;
-            }
-
-            const_iterator &operator--() {
-                if (!validity_check(_data, _block))throw sjtu::invalid_iterator("operator--");
-                if (_data == _block->_front)return _block->begin();
-                _data = _block->_base + (_data - _block->_base - 1 + _block->block_volume) % _block->block_volume;
-                return *this;
-            }
-
-            const_iterator &operator=(const_iterator &other) {
-                if (&other == this)return *this;
-                _data = other._data;
-                _block = other._block;
-                return *this;
-            }
-
-            /**
-             * compare functions
-             */
-            [[nodiscard]] bool operator==(const iterator &rhs) {
-                return _data == rhs._data && _block == rhs._block;
-            }
-
-            [[nodiscard]] bool operator!=(const iterator &rhs) {
-                return !(*this == rhs);
-            }
-
-            [[nodiscard]] bool operator==(const_iterator &rhs) {
-                return _data == rhs._data && _block == rhs._block;
-            }
-
-            [[nodiscard]] bool operator!=(const_iterator &rhs) {
-                return !(*this == rhs);
-            }
-
-
-            const T *operator->() const {
-                if (!validity_check(_data, _block))throw sjtu::invalid_iterator("operator->");
-                return _data;
-            }
-
-            const T &operator*() const {
-                if (!validity_check(_data, _block))throw sjtu::invalid_iterator("operator->");
-                return *_data;
-            }
-        };
-
-
-        block() : block_size(0), block_volume(100) {
-            _base = _rear = _front = new T[block_volume];
+        block(int cap) : _head(0), _tail(0), _count(0), _capacity(cap + 2) {
+            _data = new T*[_capacity];
+            for (int i = 0; i < _capacity; ++i) _data[i] = nullptr;
         }
 
-        block(size_t volume) : block_size(0), block_volume(volume) {
-            _base = _rear = _front = new T[block_volume];
+        block(const block &other) : _head(0), _tail(other._count), _count(other._count), _capacity(other._capacity) {
+            _data = new T*[_capacity];
+            for (int i = 0; i < _count; ++i) {
+                _data[i] = new T(other[i]);
+            }
+            for (int i = _count; i < _capacity; ++i) _data[i] = nullptr;
+        }
+
+        block &operator=(const block &other) {
+            if (this == &other) return *this;
+            for (int i = 0; i < _capacity; ++i) {
+                if (_data[i]) {
+                    delete _data[i];
+                    _data[i] = nullptr;
+                }
+            }
+            delete[] _data;
+            _capacity = other._capacity;
+            _head = 0;
+            _tail = other._count;
+            _count = other._count;
+            _data = new T*[_capacity];
+            for (int i = 0; i < _count; ++i) _data[i] = new T(other[i]);
+            for (int i = _count; i < _capacity; ++i) _data[i] = nullptr;
+            return *this;
         }
 
         ~block() {
-            delete[] _base;
-        }
-
-
-        /*
-         *state access
-        */
-
-        [[nodiscard]] size_t size() const {
-            return block_size;
-        }
-
-        [[nodiscard]] bool full() const {
-            return block_size == block_volume;
-        }
-
-        [[nodiscard]] bool empty() const {
-            return block_size == 0;
-        }
-
-
-        [[nodiscard]] static size_t position(const iterator &it) {
-            if (!validity_check(it._data, it._block))throw sjtu::invalid_iterator("position_check");
-            if (it._block->_front < it._block->_rear)throw sjtu::invalid_iterator("position_check");
-            if (it._block->_front < it._block->_rear)return it._data - it._block->_front;
-            else {
-                if (it._block->_front < it._data)return it._data - it._block->_front;
-                else if (it._block->_rear > it._data)return it._block->block_size - (it._block->_rear - it._data - 1);
-                throw sjtu::runtime_error("positionfail");
+            for (int i = 0; i < _capacity; ++i) {
+                if (_data[i]) delete _data[i];
             }
+            delete[] _data;
+        }
+        size_t size() const { return _count; }
+        bool empty() const { return _count == 0; }
+        bool full() const { return _count >= _capacity - 1; }
+
+        iterator begin() { return iterator(this, 0); }
+        iterator end() { return iterator(this, _count); }
+
+        const T &front() const { return (*this)[0]; }
+        const T &back() const { return (*this)[_count - 1]; }
+
+        static int position(const iterator &it) { return it._pos; }
+
+        T& operator[](int pos) {
+            return *_data[_idx(_head + pos)];
         }
 
-        //
-        void push_back(const T &data) {
-            if (full())throw sjtu::index_out_of_bound("push_back out of block");
-            *_rear = data;
-            _rear = (_rear - _base + 1 + block_volume) % block_volume + _base;
-            ++block_size;
+        const T& operator[](int pos) const {
+            return *_data[_idx(_head + pos)];
+        }
+        void push_back(const T &val) {
+            _data[_tail] = new T(val);
+            _tail = _idx(_tail + 1);
+            _count++;
         }
 
-        void push_front(const T &data) {
-            if (full())throw sjtu::index_out_of_bound("push_front out of block");
-            _front = (_front - _base - 1 + block_volume) % block_volume + _base;
-            *_front = data;
-            ++block_size;
-        }
-
-        void pop_front() {
-            if (empty())throw sjtu::container_is_empty("pop_front an empty block");
-            _front = (_front - _base + 1) % block_volume + _base;
-            --block_size;
+        void push_front(const T &val) {
+            _head = _idx(_head - 1);
+            _data[_head] = new T(val);
+            _count++;
         }
 
         void pop_back() {
-            if (empty())throw sjtu::container_is_empty("pop_back an empty block");
-            _rear = (_rear - _base - 1) % block_volume + _base;
-            --block_size;
+            _tail = _idx(_tail - 1);
+            delete _data[_tail];
+            _data[_tail] = nullptr;
+            _count--;
         }
 
-
-        //random access
-        T &operator[](size_t pos) {
-            if (pos >= block_size)throw sjtu::index_out_of_bound("operator[]");
-            return *(_base + pos % block_volume + _base);
+        void pop_front() {
+            delete _data[_head];
+            _data[_head] = nullptr;
+            _head = _idx(_head + 1);
+            _count--;
         }
 
-        T &at(size_t pos) {
-            if (pos >= block_size)throw sjtu::index_out_of_bound("operator[]");
-            return *(_base + pos % block_volume + _base);
+        iterator insert(int pos, const T &val) {
+            if (pos == 0) { push_front(val); return begin(); }
+            if (pos == _count) { push_back(val); return iterator(this, _count - 1); }
+            if (pos < _count / 2) {
+                _head = _idx(_head - 1);
+                for (int i = 0; i < pos; ++i) {
+                    _data[_idx(_head + i)] = _data[_idx(_head + i + 1)];
+                }
+            } else {
+                for (int i = _count; i > pos; --i) {
+                    _data[_idx(_head + i)] = _data[_idx(_head + i - 1)];
+                }
+                _tail = _idx(_tail + 1);
+            }
+            _data[_idx(_head + pos)] = new T(val);
+            _count++;
+            return iterator(this, pos);
         }
 
-        //begin&end
-        iterator begin() const {
-            return iterator(_front, this);
+        T insert_full(int pos, const T &val) {
+            T ret = (*this)[_count - 1];
+            insert(pos, val);
+            pop_back();
+            return ret;
         }
 
-        iterator end() const {
-            return iterator(_rear, this);
-        }
-
-        const_iterator begin() {
-            return const_iterator(_front, this);
-        }
-
-        const_iterator cbegin() const {
-            return const_iterator(_front, this);
-        }
-
-        const_iterator end() {
-            return const_iterator(_rear, this);
-        }
-
-        const_iterator cend() const {
-            return const_iterator(_rear, this);
-        }
-
-
-        T &front() {
-            if (empty())throw sjtu::container_is_empty("block.front");
-            return *_front;
-        }
-
-        T &back() {
-            if (empty())throw sjtu::container_is_empty("block.back");
-            return *(_rear - 1);
+        iterator erase(int pos) {
+            delete _data[_idx(_head + pos)];
+            if (pos < _count / 2) {
+                for (int i = pos; i > 0; --i) {
+                    _data[_idx(_head + i)] = _data[_idx(_head + i - 1)];
+                }
+                _data[_head] = nullptr;
+                _head = _idx(_head + 1);
+            } else {
+                for (int i = pos; i < _count - 1; ++i) {
+                    _data[_idx(_head + i)] = _data[_idx(_head + i + 1)];
+                }
+                _tail = _idx(_tail - 1);
+                _data[_tail] = nullptr;
+            }
+            _count--;
+            if (pos > _count) return end();
+            return iterator(this, pos);
         }
     };
 
@@ -664,24 +593,137 @@ namespace sjtu {
     template<class T>
     class deque {
     public:
-        typedef double_list<block<T> *> BlockT_list;
-        typedef typename double_list<block<T> *>::iterator BlockT_list_iterator;
-        typedef typename double_list<block<T> *>::const_iterator BlockT_list_citerator;
+        typedef double_list<block<T>> BlockT_list;
+        typedef typename BlockT_list::iterator BlockT_list_iterator;
+        typedef typename BlockT_list::const_iterator BlockT_list_citerator;
         typedef typename block<T>::iterator Block_iterator;
+        class iterator;
+        class const_iterator;
     private:
         /*Components
          *length,ideal_length
          *double_list contains the blocks
          */
+        size_t blockMinor = 4096 / sizeof(T);
         BlockT_list _blocks;
         size_t length, ideal_block_length;
+        void check(iterator &pos) {
+            auto &mp_it = pos.mp_it;
+            auto &bl_it = pos.bl_it;
+            if (mp_it->size() <= ideal_block_length * 2) return;
+            block<T> next_block(ideal_block_length * 2);
+            int offset = block<T>::position(bl_it);
+            size_t half = mp_it->size() / 2;
+            size_t right_size = mp_it->size() - half;
+            for (size_t i = half; i < mp_it->size(); ++i) {
+                next_block.push_back((*mp_it)[i]);
+            }
+            for (size_t i = 0; i < right_size; ++i) {
+                mp_it->pop_back();
+            }
+            auto insert_pos = mp_it;
+            ++insert_pos;
+            _blocks.insert(insert_pos, next_block);
+            if (offset > static_cast<int>(half + right_size)) {
+                offset = static_cast<int>(half + right_size);
+            }
+            if (offset >= static_cast<int>(half)) {
+                auto right_it = mp_it;
+                ++right_it;
+                mp_it = right_it;
+                bl_it = mp_it->begin() + (offset - static_cast<int>(half));
+            } else {
+                bl_it = mp_it->begin() + offset;
+            }
+        }
+
+        void conquer(iterator &pos) {
+            auto &mp_it = pos.mp_it;
+            auto &bl_it = pos.bl_it;
+            if (mp_it == _blocks.end()) return;
+            if (mp_it->empty()) return;
+            int offset = block<T>::position(bl_it);
+
+            auto next_it = mp_it;
+            ++next_it;
+            if (next_it != _blocks.end() && mp_it->size() + next_it->size() <= ideal_block_length) {
+                for (size_t i = 0; i < next_it->size(); ++i) {
+                    mp_it->push_back((*next_it)[i]);
+                }
+                _blocks.erase(next_it);
+                if (offset > static_cast<int>(mp_it->size())) offset = static_cast<int>(mp_it->size());
+                bl_it = mp_it->begin() + offset;
+                return;
+            }
+            if (mp_it != _blocks.begin()) {
+                auto prev_it = mp_it;
+                --prev_it;
+                if (prev_it->size() + mp_it->size() <= ideal_block_length) {
+                    int old_prev_size = prev_it->size();
+                    for (size_t i = 0; i < mp_it->size(); ++i) {
+                        prev_it->push_back((*mp_it)[i]);
+                    }
+                    auto to_delete = mp_it;
+                    mp_it = prev_it;
+                    bl_it = mp_it->begin() + old_prev_size + offset;
+                    _blocks.erase(to_delete);
+                    if (bl_it == mp_it->end()) {
+                        auto nxt = mp_it;
+                        ++nxt;
+                        if (nxt != _blocks.end()) {
+                            mp_it = nxt;
+                            bl_it = mp_it->begin();
+                        }
+                    }
+                    return;
+                }
+            }
+            if (bl_it == mp_it->end()) {
+                auto nxt = mp_it;
+                ++nxt;
+                if (nxt != _blocks.end()) {
+                    mp_it = nxt;
+                    bl_it = mp_it->begin();
+                }
+            }
+        }
+
+        void add(iterator &pos) {
+            ++length;
+            if ((ideal_block_length + 1) * (ideal_block_length + 1) <= length) {
+                ideal_block_length = std::max(blockMinor, ideal_block_length + 1);
+            }
+            check(pos);
+        }
+
+        void add() {
+            ++length;
+            if ((ideal_block_length + 1) * (ideal_block_length + 1) <= length) {
+                ideal_block_length = std::max(blockMinor, ideal_block_length + 1);
+            }
+        }
+
+        void minor(iterator &pos) {
+            --length;
+            if (ideal_block_length * ideal_block_length > length) {
+                ideal_block_length = std::max(blockMinor, ideal_block_length - 1);
+            }
+            conquer(pos);
+        }
+
+        void minor() {
+            --length;
+            if (ideal_block_length * ideal_block_length > length) {
+                ideal_block_length = std::max(blockMinor, ideal_block_length - 1);
+            }
+        }
 
     public:
-        class const_iterator;
         friend class iterator;
         friend class const_iterator;
 
         class iterator {
+            friend class deque;
         private:
             /**
              * includes three components
@@ -698,9 +740,8 @@ namespace sjtu {
 
             iterator() = default;
 
-            iterator(const BlockT_list &a, const BlockT_list_iterator &b, const Block_iterator &c) : mp_it(a), bl_it(b),
-                contain_it(c) {
-            }
+            iterator(BlockT_list *a, const BlockT_list_iterator &b, const Block_iterator &c)
+            : contain_it(a), mp_it(b), bl_it(c) {}
 
             iterator(const iterator &other) : mp_it(other.mp_it), bl_it(other.bl_it), contain_it(other.contain_it) {
             }
@@ -713,44 +754,14 @@ namespace sjtu {
              * same for operator-.
              */
             iterator operator+(const int &n) const {
-                iterator r = *this;
-                size_t pos = block<T>::position(r.bl_it), len = r.bl_it._block->block_size;
-                if (len - pos - 1 >= n) {
-                    r.bl_it = r.bl_it + n;
-                    return r;
-                }
-                int cnt = n;
-                size_t length1;
-                cnt -= len - 1 - pos;
-                while (r.mp_it != r.contain_it->end()) {
-                    ++r.mp_it;
-                    length1 = r.mp_it._block->block_size;
-                    if (cnt <= length1) {
-                        r.bl_it = *(r.mp_it)[cnt - 1];
-                        return r;
-                    }
-                }
-                throw sjtu::runtime_error("position+n fail");
+                iterator tmp = *this;
+
+                return tmp += n;
             }
 
             iterator operator-(const int &n) const {
-                iterator r = *this;
-                size_t pos = block<T>::position(r.bl_it);
-                if (pos >= n) {
-                    r.bl_it = r.bl_it - n;
-                    return r;
-                }
-                size_t cnt = n, length1;
-                cnt -= pos;
-                while (r.mp_it != r.contain_it->begin()) {
-                    --r.mp_it;
-                    length1 = r.mp_it._block->block_size;
-                    if (cnt <= length1) {
-                        r.bl_it = *r.mp_it[length1 - cnt];
-                        return r;
-                    }
-                }
-                throw sjtu::runtime_error("position+n fail");
+                iterator tmp = *this;
+                return tmp -= n;
             }
 
             /**
@@ -759,107 +770,151 @@ namespace sjtu {
              * invaild_iterator.
              */
             int operator-(const iterator &rhs) const {
-                if (rhs.contain_it != contain_it)throw sjtu::invalid_iterator("iterator::operator-");
-                iterator r = *this;
-                size_t num = r.bl_it._block->block_size - block<T>::position(r.bl_it) - 1;
-                if (r.mp_it == rhs.mp_it)return block<T>::position(r.bl_it) - block<T>::position(rhs.bl_it);
-                while (r.mp_it != contain_it->end()) {
-                    ++r.mp_it;
-                    r.bl_it = (*r.mp_it)->_front;
-                    if (r.mp_it == rhs.mp_it)return num + block<T>::position(rhs.bl_it) + 1;
-                    num += (*r.mp_it)->block_size;
+                if (rhs.contain_it != contain_it)throw std::invalid_argument("iterator-iterator");
+                if (mp_it == rhs.mp_it) {
+                    return (bl_it - rhs.bl_it);
                 }
-                r = *this;
-                num = block<T>::position(r.bl_it);
-                while (r.mp_it != contain_it->begin()) {
-                    --r.mp_it;
-                    r.bl_it = (*r.mp_it)->_front;
-                    if (r.mp_it == rhs.mp_it)return num + rhs.bl_it._block->block_size - 1 - block<T>::position(
-                                                        rhs.bl_it);
-                    num += r.bl_it._block->block_size;
+                int dist= 0;
+                auto it = rhs.mp_it;
+                dist += ((*it).end() - rhs.bl_it);
+                ++it;
+                while (it != contain_it->end() && it != mp_it) {
+                    dist += (*it).size();
+                    ++it;
                 }
-                throw sjtu::invalid_iterator("iterator::operator-");
+
+                if (it == mp_it) {
+                    dist += (bl_it - (*it).begin());
+                    return dist;
+                }
+                dist = 0;
+                it = mp_it;
+                dist += ((*it).end() - bl_it);
+                ++it;
+                while (it != contain_it->end() && it != rhs.mp_it) {
+                    dist += (*it).size();
+                    ++it;
+                }
+                dist += (rhs.bl_it - (*it).begin());
+                return -dist;
             }
 
             iterator &operator+=(const int &n) {
-                size_t pos = block<T>::position((*this).bl_it), len = (*this).bl_it._block->block_size;
-                if (len - pos - 1 >= n) {
-                    (*this).bl_it = (*this).bl_it + n;
-                    return (*this);
-                }
-                int cnt = n;
-                size_t length1;
-                cnt -= len - 1 - pos;
-                while ((*this).mp_it != (*this).contain_it->end()) {
-                    ++(*this).mp_it;
-                    length1 = (*this).mp_it._block->block_size;
-                    if (cnt <= length1) {
-                        (*this).bl_it = *((*this).mp_it)[cnt - 1];
-                        return (*this);
+                if (n==0) return *this;
+                if (n < 0) return *this -= (-n);
+                int step = n;
+                while (step > 0) {
+                    int remain = (*mp_it).end() - bl_it;
+                    if (step < remain) {
+                        bl_it = bl_it + step;
+                        return *this;
                     }
+                    step -= remain;
+                    auto nxt = mp_it;
+                    ++nxt;
+                    if (nxt == contain_it->end()) {
+                        bl_it = (*mp_it).end();
+                        return *this;
+                    }
+                    mp_it = nxt;
+                    bl_it = (*mp_it).begin();
                 }
-                throw sjtu::runtime_error("position+n fail");
+                return *this;
             }
 
             iterator &operator-=(const int &n) {
-                size_t pos = block<T>::position((*this).bl_it);
-                if (pos >= n) {
-                    (*this).bl_it = (*this).bl_it - n;
-                    return (*this);
-                }
-                size_t cnt = n, length1;
-                cnt -= pos;
-                while ((*this).mp_it != (*this).contain_it->begin()) {
-                    --(*this).mp_it;
-                    length1 = (*this).mp_it._block->block_size;
-                    if (cnt <= length1) {
-                        (*this).bl_it = *(*this).mp_it[length1 - cnt];
-                        return (*this);
+                if (n==0) return *this;
+                if (n < 0) return *this += (-n);
+                int step = n;
+                while (step > 0) {
+                    int left = bl_it - (*mp_it).begin();
+                    if (step <= left) {
+                        bl_it = bl_it - step;
+                        return *this;
                     }
+                    step -= left;
+                    if (mp_it == contain_it->begin()) {
+                        bl_it = (*mp_it).begin();
+                        return *this;
+                    }
+                    --mp_it;
+                    bl_it = (*mp_it).end();
                 }
-                throw sjtu::runtime_error("position+n fail");
+                return *this;
             }
 
             /**
              * iter++
              */
             iterator operator++(int) {
-                return (*this + 1);
+                iterator tmp = *this;
+                ++*this;
+                return tmp;
             }
 
             /**
              * ++iter
              */
             iterator &operator++() {
-                return (*this += 1);
+                if (contain_it == nullptr) throw invalid_iterator("++iterator");
+                auto last = contain_it->end();
+                --last;
+                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator("++iterator");
+                ++bl_it;
+                if (bl_it == (*mp_it).end()) {
+                    BlockT_list_iterator next_mp = mp_it;
+                    ++next_mp;
+                    if (next_mp != contain_it->end()) {
+                        mp_it = next_mp;
+                        bl_it = (*mp_it).begin();
+                    }
+                }
+                return *this;
             }
 
             /**
              * iter--
              */
             iterator operator--(int) {
-                return (*this - 1);
+                iterator tmp = *this;
+                --(*this);
+                return tmp;
             }
 
             /**
              * --iter
              */
             iterator &operator--() {
-                return (*this -= 1);
+                if (contain_it == nullptr) throw invalid_iterator("--iterator");
+                if (mp_it == contain_it->begin() && bl_it == (*mp_it).begin()) throw invalid_iterator("--iterator");
+                if (bl_it == (*mp_it).begin()) {
+                    --mp_it;
+                    bl_it = (*mp_it).end();
+                }
+                --bl_it;
+                return *this;
             }
 
             /**
              * *it
              */
             T &operator*() const {
+                if (contain_it == nullptr) throw invalid_iterator("*iterator");
+                auto last = contain_it->end();
+                --last;
+                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator("*iterator");
                 return *bl_it;
             }
 
             /**
              * it->field
              */
-            T *operator->() const noexcept {
-                return &(*bl_it);
+            T *operator->() const {
+                if (contain_it == nullptr) throw invalid_iterator("->iterator");
+                auto last = contain_it->end();
+                --last;
+                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator("->iterator");
+                return bl_it.operator->();
             }
 
             /**
@@ -884,12 +939,14 @@ namespace sjtu {
             bool operator!=(const const_iterator &rhs) const {
                 return !(*this == rhs);
             }
-            operator const_iterator() const{
+
+            operator const_iterator() const {
                 return const_iterator(*this);
             }
         };
 
         class const_iterator {
+        friend class deque;
         private:
             /**
              * includes three components
@@ -897,67 +954,41 @@ namespace sjtu {
              * the pointer to where the block rests in the double_list:mp_it
              * the pointer to where the data rests in the corresponding block:bl_it
              */
+
+
+        public:
             BlockT_list *contain_it;
             BlockT_list_iterator mp_it;
             Block_iterator bl_it;
 
-        public:
             const_iterator() = default;
 
-            const_iterator(const BlockT_list &a, const BlockT_list_iterator &b,
-                           const Block_iterator &c) : mp_it(a), bl_it(b), contain_it(c) {
+            const_iterator(BlockT_list *a, const BlockT_list_iterator &b, const Block_iterator &c)
+            : contain_it(a), mp_it(b), bl_it(c) {}
+
+            const_iterator(const const_iterator &other) : mp_it(other.mp_it), bl_it(other.bl_it), contain_it(other.contain_it) {
             }
 
-            const_iterator(const const_iterator &other) : mp_it(other.mp_it), bl_it(other.bl_it),
-                                                          contain_it(other.contain_it) {
+            const_iterator(const iterator &other) : mp_it(other.mp_it), bl_it(other.bl_it), contain_it(other.contain_it) {
             }
 
             ~const_iterator() = default;
 
             /**
-             * return a new const_iterator which points to the n-next element.
+             * return a new iterator which points to the n-next element.
              * if there are not enough elements, the behaviour is undefined.
              * same for operator-.
              */
             const_iterator operator+(const int &n) const {
-                const_iterator r = *this;
-                size_t pos = block<T>::position(r.bl_it), len = r.bl_it._block->block_size;
-                if (len - pos - 1 >= n) {
-                    r.bl_it = r.bl_it + n;
-                    return r;
-                }
-                int cnt = n;
-                size_t length1;
-                cnt -= len - 1 - pos;
-                while (r.mp_it != r.contain_it->end()) {
-                    ++r.mp_it;
-                    length1 = r.mp_it._block->block_size;
-                    if (cnt <= length1) {
-                        r.bl_it = *(r.mp_it)[cnt - 1];
-                        return r;
-                    }
-                }
-                throw sjtu::runtime_error("position+n fail");
+                const_iterator tmp = *this;
+                tmp += n;
+                return tmp;
             }
 
             const_iterator operator-(const int &n) const {
-                const_iterator r = *this;
-                size_t pos = block<T>::position(r.bl_it);
-                if (pos >= n) {
-                    r.bl_it = r.bl_it - n;
-                    return r;
-                }
-                size_t cnt = n, length1;
-                cnt -= pos;
-                while (r.mp_it != r.contain_it->begin()) {
-                    --r.mp_it;
-                    length1 = r.mp_it._block->block_size;
-                    if (cnt <= length1) {
-                        r.bl_it = *r.mp_it[length1 - cnt];
-                        return r;
-                    }
-                }
-                throw sjtu::runtime_error("position+n fail");
+                const_iterator tmp = *this;
+                tmp -= n;
+                return tmp;
             }
 
             /**
@@ -966,107 +997,151 @@ namespace sjtu {
              * invaild_iterator.
              */
             int operator-(const const_iterator &rhs) const {
-                if (rhs.contain_it != contain_it)throw sjtu::invalid_iterator("const_iterator::operator-");
-                const_iterator r = *this;
-                size_t num = r.bl_it._block->block_size - block<T>::position(r.bl_it) - 1;
-                if (r.mp_it == rhs.mp_it)return block<T>::position(r.bl_it) - block<T>::position(rhs.bl_it);
-                while (r.mp_it != contain_it->end()) {
-                    ++r.mp_it;
-                    r.bl_it = (*r.mp_it)->_front;
-                    if (r.mp_it == rhs.mp_it)return num + block<T>::position(rhs.bl_it) + 1;
-                    num += (*r.mp_it)->block_size;
+                if (rhs.contain_it != contain_it)throw std::invalid_argument("const_iterator-const_iterator");
+                if (mp_it == rhs.mp_it) {
+                    return (bl_it - rhs.bl_it);
                 }
-                r = *this;
-                num = block<T>::position(r.bl_it);
-                while (r.mp_it != contain_it->begin()) {
-                    --r.mp_it;
-                    r.bl_it = (*r.mp_it)->_front;
-                    if (r.mp_it == rhs.mp_it)return num + rhs.bl_it._block->block_size - 1 - block<T>::position(
-                                                        rhs.bl_it);
-                    num += r.bl_it._block->block_size;
+                int dist= 0;
+                auto it = rhs.mp_it;
+                dist += ((*it).end() - rhs.bl_it);
+                ++it;
+                while (it != contain_it->end() && it != mp_it) {
+                    dist += (*it).size();
+                    ++it;
                 }
-                throw sjtu::invalid_iterator("const_iterator::operator-");
+
+                if (it == mp_it) {
+                    dist += (bl_it - (*it).begin());
+                    return dist;
+                }
+                dist = 0;
+                it = mp_it;
+                dist += ((*it).end() - bl_it);
+                ++it;
+                while (it != contain_it->end() && it != rhs.mp_it) {
+                    dist += (*it).size();
+                    ++it;
+                }
+                dist += (rhs.bl_it - (*it).begin());
+                return -dist;
             }
 
             const_iterator &operator+=(const int &n) {
-                size_t pos = block<T>::position((*this).bl_it), len = (*this).bl_it._block->block_size;
-                if (len - pos - 1 >= n) {
-                    (*this).bl_it = (*this).bl_it + n;
-                    return (*this);
-                }
-                int cnt = n;
-                size_t length1;
-                cnt -= len - 1 - pos;
-                while ((*this).mp_it != (*this).contain_it->end()) {
-                    ++(*this).mp_it;
-                    length1 = (*this).mp_it._block->block_size;
-                    if (cnt <= length1) {
-                        (*this).bl_it = *((*this).mp_it)[cnt - 1];
-                        return (*this);
+                if (n==0) return *this;
+                if (n < 0) return *this -= (-n);
+                int step = n;
+                while (step > 0) {
+                    int remain = (*mp_it).end() - bl_it;
+                    if (step < remain) {
+                        bl_it = bl_it + step;
+                        return *this;
                     }
+                    step -= remain;
+                    auto nxt = mp_it;
+                    ++nxt;
+                    if (nxt == contain_it->end()) {
+                        bl_it = (*mp_it).end();
+                        return *this;
+                    }
+                    mp_it = nxt;
+                    bl_it = (*mp_it).begin();
                 }
-                throw sjtu::runtime_error("position+n fail");
+                return *this;
             }
 
             const_iterator &operator-=(const int &n) {
-                size_t pos = block<T>::position((*this).bl_it);
-                if (pos >= n) {
-                    (*this).bl_it = (*this).bl_it - n;
-                    return (*this);
-                }
-                size_t cnt = n, length1;
-                cnt -= pos;
-                while ((*this).mp_it != (*this).contain_it->begin()) {
-                    --(*this).mp_it;
-                    length1 = (*this).mp_it._block->block_size;
-                    if (cnt <= length1) {
-                        (*this).bl_it = *(*this).mp_it[length1 - cnt];
-                        return (*this);
+                if (n==0) return *this;
+                if (n < 0) return *this += (-n);
+                int step = n;
+                while (step > 0) {
+                    int left = bl_it - (*mp_it).begin();
+                    if (step <= left) {
+                        bl_it = bl_it - step;
+                        return *this;
                     }
+                    step -= left;
+                    if (mp_it == contain_it->begin()) {
+                        bl_it = (*mp_it).begin();
+                        return *this;
+                    }
+                    --mp_it;
+                    bl_it = (*mp_it).end();
                 }
-                throw sjtu::runtime_error("position+n fail");
+                return *this;
             }
 
             /**
              * iter++
              */
             const_iterator operator++(int) {
-                return (*this + 1);
+                const_iterator tmp = *this;
+                ++*this;
+                return tmp;
             }
 
             /**
              * ++iter
              */
             const_iterator &operator++() {
-                return (*this += 1);
+                if (contain_it == nullptr) throw invalid_iterator("++const_iterator");
+                auto last = contain_it->end();
+                --last;
+                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator("++const_iterator");
+                ++bl_it;
+                if (bl_it == (*mp_it).end()) {
+                    BlockT_list_iterator next_mp = mp_it;
+                    ++next_mp;
+                    if (next_mp != contain_it->end()) {
+                        mp_it = next_mp;
+                        bl_it = (*mp_it).begin();
+                    }
+                }
+                return *this;
             }
 
             /**
              * iter--
              */
             const_iterator operator--(int) {
-                return (*this - 1);
+                const_iterator tmp = *this;
+                --(*this);
+                return tmp;
             }
 
             /**
              * --iter
              */
             const_iterator &operator--() {
-                return (*this -= 1);
+                if (contain_it == nullptr) throw invalid_iterator("--const_iterator");
+                if (mp_it == contain_it->begin() && bl_it == (*mp_it).begin()) throw invalid_iterator("--const_iterator");
+                if (bl_it == (*mp_it).begin()) {
+                    --mp_it;
+                    bl_it = (*mp_it).end();
+                }
+                --bl_it;
+                return *this;
             }
 
             /**
              * *it
              */
-            const T &operator*() const {
+            T &operator*() const {
+                if (contain_it == nullptr) throw invalid_iterator("*const_iterator");
+                auto last = contain_it->end();
+                --last;
+                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator("*const_iterator");
                 return *bl_it;
             }
 
             /**
              * it->field
              */
-            const T *operator->() const noexcept {
-                return &(*bl_it);
+            T *operator->() const {
+                if (contain_it == nullptr) throw invalid_iterator("->const_iterator");
+                auto last = contain_it->end();
+                --last;
+                if (mp_it == last && bl_it == (*mp_it).end()) throw invalid_iterator("->const_iterator");
+                return bl_it.operator->();
             }
 
             /**
@@ -1091,30 +1166,42 @@ namespace sjtu {
             bool operator!=(const const_iterator &rhs) const {
                 return !(*this == rhs);
             }
-
         };
 
         /**
          * constructors.
          */
-        deque() = default;
+        deque() : blockMinor(4096 / sizeof(T)), length(0), ideal_block_length(4096 / sizeof(T)) {
+            if (blockMinor == 0) blockMinor = 1;
+            if (ideal_block_length == 0) ideal_block_length = 1;
+            _blocks.insert_tail(block<T>(ideal_block_length));
+        };
 
-        deque(const deque &other) : _blocks(double_list<block<T> *>(other._blocks)), length(other.length),
-                                    ideal_block_length(other.ideal_block_length) {
-        }
+        deque(const deque &other) : _blocks(other._blocks), length(other.length), ideal_block_length(other.ideal_block_length) {}
 
         /**
          * deconstructor.
          */
-        ~deque() = default;
+        ~deque() {
+            clear();
+        }
 
         /**
          * assignment operator.
          */
         deque &operator=(const deque &other) {
-            _blocks = double_list<block<T> *>(other._blocks);
-            length = other.length;
-            ideal_block_length = other.ideal_block_length;
+            if (&other==this)return *this;
+            deque tmp(other);
+            _blocks.swap(tmp._blocks);
+            size_t t1 = blockMinor;
+            blockMinor = tmp.blockMinor;
+            tmp.blockMinor = t1;
+            size_t t2 = length;
+            length = tmp.length;
+            tmp.length = t2;
+            size_t t3 = ideal_block_length;
+            ideal_block_length = tmp.ideal_block_length;
+            tmp.ideal_block_length = t3;
             return *this;
         }
 
@@ -1124,11 +1211,10 @@ namespace sjtu {
          */
         T &at(const size_t &pos) {
             size_t cnt = 0;
-            if (_blocks.empty()) throw sjtu::index_out_of_bound("deque::at");
-            if (pos >= length || pos < 0)throw sjtu::index_out_of_bound("deque::at");
-            BlockT_list_iterator i = _blocks->begin();
-            while (cnt + (*i)->block_size - 1 < pos) {
-                cnt += (*i)->block_size;
+            if (pos >= length)throw index_out_of_bound("deque::at");
+            BlockT_list_iterator i = _blocks.begin();
+            while (i != _blocks.end() && cnt + i->size() <= pos) {
+                cnt += i->size();
                 ++i;
             }
             return (*i)[pos - cnt];
@@ -1136,39 +1222,26 @@ namespace sjtu {
 
         const T &at(const size_t &pos) const {
             size_t cnt = 0;
-            if (_blocks.empty()) throw sjtu::index_out_of_bound("deque::at");
-            if (pos >= length || pos < 0)throw sjtu::index_out_of_bound("deque::at");
-            BlockT_list_iterator i = _blocks->begin();
-            while (cnt + (*i)->block_size - 1 < pos) {
-                cnt += (*i)->block_size;
+            if (pos >= length)throw index_out_of_bound("deque::at");
+            BlockT_list_citerator i = _blocks.begin();
+            while (i != _blocks.end() && cnt + i->size() <= pos) {
+                cnt += i->size();
                 ++i;
             }
             return (*i)[pos - cnt];
         }
 
-        T &operator[](const size_t &pos) {
-            try {
-                return at(pos);
-            } catch (const sjtu::index_out_of_bound &) {
-                throw sjtu::index_out_of_bound("deque::[]");
-            }
-        }
+        T &operator[](const size_t &pos) { return at(pos); }
 
-        const T &operator[](const size_t &pos) const {
-            try {
-                return at(pos);
-            } catch (sjtu::index_out_of_bound &) {
-                throw sjtu::index_out_of_bound("deque::[] const");
-            }
-        }
+        const T &operator[](const size_t &pos) const { return at(pos); }
 
         /**
          * access the first element.
          * throw container_is_empty when the container is empty.
          */
         const T &front() const {
-            if (empty())throw sjtu::container_is_empty("front");
-            return (*_blocks.begin())->front();
+            if (empty())throw container_is_empty("front");
+            return _blocks.begin()->front();
         }
 
         /**
@@ -1176,34 +1249,54 @@ namespace sjtu {
          * throw container_is_empty when the container is empty.
          */
         const T &back() const {
-            if ((*this).empty())throw sjtu::container_is_empty("back");
-            return (*_blocks.end()--)->end();
+            if (empty()) throw container_is_empty("back");
+            auto it = _blocks.end();
+            --it;
+            return it->back();
         }
 
         /**
-         * return an iterator to the beginning.
+         * return an const_iterator to the beginning.
          */
         iterator begin() {
-            if (empty())throw sjtu::container_is_empty("begin");
-            return iterator(this, _blocks.begin(), (*_blocks.begin())->begin());
+            if (empty()) return end();
+            return iterator(&_blocks, _blocks.begin(), _blocks.begin()->begin());
         }
 
         const_iterator cbegin() const {
-            if (empty())throw sjtu::container_is_empty("begin");
-            return const_iterator(this, _blocks.cbegin(), (*_blocks.cbegin())->cbegin());
+            if (empty()) return cend();
+            BlockT_list *ptr = const_cast<BlockT_list *>(&_blocks);
+            return const_iterator(ptr, ptr->begin(), ptr->begin()->begin());
+        }
+
+        const_iterator begin() const {
+            return cbegin();
         }
 
         /**
-         * return an iterator to the end.
+         * return an const_iterator to the end.
          */
         iterator end() {
-            if (empty())throw sjtu::container_is_empty("begin");
-            return iterator(this, _blocks.end(), nullptr);
+            auto it = _blocks.end();
+            --it;
+            return iterator(&_blocks, it, it->end());
         }
 
         const_iterator cend() const {
-            if (empty())throw sjtu::container_is_empty("begin");
-            return iterator(this, _blocks.cend(), nullptr);
+            BlockT_list *ptr = const_cast<BlockT_list *>(&_blocks);
+            auto it = ptr->end();
+            --it;
+            return const_iterator(ptr, it, it->end());
+        }
+
+        const_iterator end() const {
+            return cend();
+        }
+
+        const_iterator cend() {
+            auto it = _blocks.end();
+            --it;
+            return const_iterator(&_blocks, it, it->end());
         }
 
         /**
@@ -1225,6 +1318,9 @@ namespace sjtu {
          */
         void clear() {
             _blocks.clear();
+            length = 0;
+            ideal_block_length = blockMinor;
+            _blocks.insert_tail(block<T>(ideal_block_length));
         }
 
         /**
@@ -1233,12 +1329,31 @@ namespace sjtu {
          * throw if the iterator is invalid or it points to a wrong place.
          */
         iterator insert(iterator pos, const T &value) {
-            if (pos.contain_it != this)throw invalid_iterator("insert");
-            auto i=pos.mp_it;
-            if (!pos.mp_it.validity_check())throw invalid_iterator("insert");
-            if (!pos.bl_it.validity_check())throw invalid_iterator("insert");
-            if (!pos.bl_it._block->full())
+            if (pos.contain_it != &_blocks) throw invalid_iterator("insert");
+            add(pos);
+            if (!pos.mp_it->full()) {
+                int p = block<T>::position(pos.bl_it);
+                pos.bl_it = pos.mp_it->insert(p, value);
+                return pos;
+            }
 
+            auto next_it = pos.mp_it;
+            ++next_it;
+            if (next_it == _blocks.end() || next_it->full()) {
+                _blocks.insert(next_it, block<T>(ideal_block_length));
+                next_it = pos.mp_it;
+                ++next_it;
+            }
+            int p = block<T>::position(pos.bl_it);
+            if (p == static_cast<int>(pos.mp_it->size())) {
+                next_it->push_front(value);
+                pos.mp_it = next_it;
+                pos.bl_it = pos.mp_it->begin();
+                return pos;
+            }
+            T tmp = pos.mp_it->insert_full(p, value);
+            next_it->push_front(tmp);
+            return pos;
         }
 
         /**
@@ -1248,12 +1363,52 @@ namespace sjtu {
          * the iterator is invalid, or it points to a wrong place.
          */
         iterator erase(iterator pos) {
+            if (pos.contain_it != &_blocks) throw invalid_iterator("erase");
+            if (empty()) throw container_is_empty("erase");
+            if (pos.mp_it == _blocks.end()) throw invalid_iterator("erase");
+            int p = block<T>::position(pos.bl_it);
+            if (p < 0 || p >= static_cast<int>(pos.mp_it->size())) throw invalid_iterator("erase");
+            pos.bl_it = pos.mp_it->erase(p);
+            minor(pos);
+            if (length == 0) {
+                clear();
+                return end();
+            }
+            if (pos.mp_it->empty() && _blocks.length() > 1) {
+                auto next_it = pos.mp_it;
+                ++next_it;
+                _blocks.erase(pos.mp_it);
+                if (next_it != _blocks.end()) {
+                    pos.mp_it = next_it;
+                    pos.bl_it = pos.mp_it->begin();
+                } else {
+                    return end();
+                }
+            }
+            if (pos.bl_it == pos.mp_it->end()) {
+                auto next_it = pos.mp_it;
+                ++next_it;
+                if (next_it != _blocks.end()) {
+                    pos.mp_it = next_it;
+                    pos.bl_it = pos.mp_it->begin();
+                }
+            }
+            return pos;
         }
 
         /**
          * add an element to the end.
          */
         void push_back(const T &value) {
+            add();
+            auto pos_mp = _blocks.end();
+            --pos_mp;
+            if (pos_mp->full()) {
+                _blocks.insert_tail(block<T>(ideal_block_length));
+                pos_mp = _blocks.end();
+                --pos_mp;
+            }
+            pos_mp->push_back(value);
         }
 
         /**
@@ -1261,12 +1416,30 @@ namespace sjtu {
          * throw when the container is empty.
          */
         void pop_back() {
+            if (empty()) throw container_is_empty("pop_back");
+            auto pos_mp = _blocks.end();
+            --pos_mp;
+            pos_mp->pop_back();
+            minor();
+            if (length == 0) {
+                clear();
+                return;
+            }
+            if (pos_mp->empty() && _blocks.length() > 1) {
+                _blocks.delete_tail();
+            }
         }
-
         /**
          * insert an element to the beginning.
          */
         void push_front(const T &value) {
+            add();
+            auto pos_mp = _blocks.begin();
+            if (pos_mp->full()) {
+                _blocks.insert_head(block<T>(ideal_block_length));
+                pos_mp = _blocks.begin();
+            }
+            pos_mp->push_front(value);
         }
 
         /**
@@ -1274,6 +1447,17 @@ namespace sjtu {
          * throw when the container is empty.
          */
         void pop_front() {
+            if (empty()) throw container_is_empty("pop_front");
+            auto pos_mp = _blocks.begin();
+            pos_mp->pop_front();
+            minor();
+            if (length == 0) {
+                clear();
+                return;
+            }
+            if (pos_mp->empty() && _blocks.length() > 1) {
+                _blocks.delete_head();
+            }
         }
     };
 } // namespace sjtu
